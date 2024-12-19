@@ -1,4 +1,4 @@
-import { NativeModules, Platform } from 'react-native';
+import {NativeModules, Platform, UIManager} from 'react-native';
 import NativeInstance from './nativeInstance';
 import { Source, SourceConfig } from './source';
 import { AudioTrack } from './audioTrack';
@@ -93,9 +93,10 @@ export class Player extends NativeInstance<PlayerConfig> {
    * Load the IMA provided stream URL created using assetId and set fallbackUrl
    * @param assetId IMA asset ID
    * @param fallbackUrl DAI url backup
+   * @param nativeViewNodeRef ref from the native PlayerView component
    */
-  loadDaiStream = (assetId: string, fallbackUrl: string) => {
-    PlayerModule.loadDaiStream(assetId, fallbackUrl);
+  loadDaiStream = (assetId: string, fallbackUrl: string, nativeViewNodeRef: number) => {
+    PlayerModule.loadDaiStream(this.nativeId, assetId, fallbackUrl, nativeViewNodeRef)
   };
 
   /**

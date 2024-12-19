@@ -3321,7 +3321,7 @@ declare class Player extends NativeInstance<PlayerConfig> {
     /**
      * Load DAI stream via Google IMA SDK
      */
-    loadDaiStream: (assetId: string, fallbackUrl: string) => void;
+    loadDaiStream: (assetId: string, fallbackUrl: string, nativeViewNodeRef: number) => void;
     /**
      * Loads the downloaded content from {@link OfflineContentManager} into the player.
      */

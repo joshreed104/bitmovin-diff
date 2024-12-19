@@ -109,7 +109,7 @@ class PlayerModule(context: ReactApplicationContext) : BitmovinBaseModule(contex
      * @param fallbackUrl URL to load as a backup to SDK provided stream
      * */
     @ReactMethod
-    fun loadDaiStream(assetId: String, fallbackUrl: String, promise: Promise) {
+    fun loadDaiStream(nativeId: String, assetId: String, fallbackUrl: String, nativeViewNode: Int, promise: Promise) {
         promise.unit.resolveOnUiThread {
             adsWrapper?.setFallbackUrl(fallbackUrl)
             adsWrapper?.requestAndLoadStream(assetId)

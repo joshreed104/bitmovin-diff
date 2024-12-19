@@ -1,23 +1,41 @@
 // swiftlint:disable file_length
 import BitmovinPlayer
+import GoogleInteractiveMediaAds
 
 @objc(PlayerModule)
-public class PlayerModule: NSObject, RCTBridgeModule { // swiftlint:disable:this type_body_length
+public class PlayerModule: NSObject, RCTBridgeModule {
+    
+    // swiftlint:disable:this type_body_length
     // swiftlint:disable:next implicitly_unwrapped_optional
     @objc public var bridge: RCTBridge!
-
+    
     /// In-memory mapping from `nativeId`s to `Player` instances.
     private var players: Registry<Player> = [:]
-
+    public var adContainerView: UIView?
+    private var nativeViewId: NSNumber?
+    private var playerViewController: UIViewController?
+    private var nativeId: NativeId?
+    private var userSeekTime = 0.0
+    private var adsWrapper = IMAAdsWrapper()
+    
     // swiftlint:disable:next implicitly_unwrapped_optional
     public static func moduleName() -> String! {
         "PlayerModule"
     }
-
+    
     public static func requiresMainQueueSetup() -> Bool {
         true
     }
+    
 
+    public func setAdContainerView(newView: UIView) {
+        self.adContainerView = newView;
+    }
+    
+    public func setPlayerViewController(viewController: UIViewController) {
+        self.playerViewController = viewController;
+    }
+    
     // swiftlint:disable:next implicitly_unwrapped_optional
     public var methodQueue: DispatchQueue! {
         bridge.uiManager.methodQueue
@@ -52,6 +70,8 @@ public class PlayerModule: NSObject, RCTBridgeModule { // swiftlint:disable:this
         config: Any?,
         networkNativeId: NativeId?
     ) {
+        print("initWithConfig")
+        self.nativeId = nativeId
         bridge.uiManager.addUIBlock { [weak self] _, _ in
             guard
                 self?.players[nativeId] == nil,
@@ -66,6 +86,8 @@ public class PlayerModule: NSObject, RCTBridgeModule { // swiftlint:disable:this
                let networkConfig = self?.setupNetworkConfig(nativeId: networkNativeId) {
                 playerConfig.networkConfig = networkConfig
             }
+            self?.adsWrapper.setPlayerModule(player: self!)
+            self?.adsWrapper.setupAdsLoader();
             self?.players[nativeId] = PlayerFactory.create(playerConfig: playerConfig)
         }
     }
@@ -83,6 +105,8 @@ public class PlayerModule: NSObject, RCTBridgeModule { // swiftlint:disable:this
         networkNativeId: NativeId?,
         analyticsConfig: Any?
     ) {
+        print("initWithAnalyticsConfig")
+        self.nativeId = nativeId
         bridge.uiManager.addUIBlock { [weak self] _, _ in
             let analyticsConfigJson = analyticsConfig
             guard
@@ -100,6 +124,8 @@ public class PlayerModule: NSObject, RCTBridgeModule { // swiftlint:disable:this
                 playerConfig.networkConfig = networkConfig
             }
             let defaultMetadata = RCTConvert.analyticsDefaultMetadataFromAnalyticsConfig(analyticsConfigJson)
+            self?.adsWrapper.setPlayerModule(player: self!)
+            self?.adsWrapper.setupAdsLoader();
             self?.players[nativeId] = PlayerFactory.create(
                 playerConfig: playerConfig,
                 analyticsConfig: analyticsConfig,
@@ -108,6 +134,51 @@ public class PlayerModule: NSObject, RCTBridgeModule { // swiftlint:disable:this
         }
     }
 
+    /**
+    Loads live stream URL via IMA SDK
+     */
+    @objc(loadDaiStream:assetId:backupURLString:viewId:)
+    func loadDaiStream(_ nativeId: NativeId, assetId: String, backupURLString: String, viewId: NSNumber) {
+        print("[Bitmovin IMA Flow]: Loading dai stream")
+        bridge.uiManager.addUIBlock { [weak self] _, views in
+            print("viewId")
+            print(viewId)
+            print("views[viewId]")
+            print(views?[viewId])
+            print("controller")
+            print(views?[viewId]?.reactViewController())
+            guard
+//                let currentPlayer = self,
+//                let currentAdContainerView = currentPlayer.adContainerView,
+//                let currentPlayerViewController = currentPlayer.playerViewController,
+//                let currentNativePlayer = currentPlayer.players[nativeId],
+                let currentPlayer = self,
+                let currentView = views?[viewId] as? RNPlayerView,
+                let currentAdContainerView = currentView.playerView,
+                let currentPlayerViewController = currentView.reactViewController(),
+                let currentNativePlayer = currentPlayer.players[nativeId]
+            else {
+                print("loadDaiStream guard not met")
+                print("view")
+                print(views?[viewId])
+                print("playerView")
+                print((views?[viewId] as? RNPlayerView)?.playerView)
+                print("view controller")
+                print(views?[viewId]?.reactViewController())
+                return
+            }
+            currentPlayer.nativeViewId = viewId;
+            currentPlayer.adsWrapper.setAssetKey(assetId: assetId);
+            currentPlayer.adsWrapper.setBackupStreamURLString(backupStreamUrl: backupURLString);
+            currentPlayer.adsWrapper.setAdContainerView(adContainer: currentAdContainerView)
+            print("IMA DEBUG: PlayerModule adContainerView before calling request stream:")
+            print(currentPlayer.adsWrapper.adContainerView)
+            currentPlayer.adsWrapper.setPlayerViewController(playerViewController: currentPlayerViewController)
+            print("IMA DEBUG: PlayerModule playerViewController before calling request stream:")
+            print(currentPlayer.adsWrapper.playerViewController)
+            currentPlayer.adsWrapper.requestStream(nativePlayer: currentNativePlayer)
+        }
+    }
     /**
      Loads the given source configuration into `nativeId`'s `Player` object.
      - Parameter nativeId: Target player.
@@ -124,6 +195,12 @@ public class PlayerModule: NSObject, RCTBridgeModule { // swiftlint:disable:this
             }
             player.load(source: source)
         }
+    }
+    
+    @objc(logViewId:)
+    func logViewId(_ viewId: NSNumber) {
+        print(viewId)
+        playerViewController = bridge.uiManager.view(forReactTag: viewId).reactViewController()
     }
 
     /**
@@ -219,7 +296,7 @@ public class PlayerModule: NSObject, RCTBridgeModule { // swiftlint:disable:this
             self?.players[nativeId]?.mute()
         }
     }
-
+    
     /**
      Call `.unmute()` on `nativeId`'s player.
      - Parameter nativeId: Target player Id.

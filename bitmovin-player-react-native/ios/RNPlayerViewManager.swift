@@ -52,6 +52,23 @@ public class RNPlayerViewManager: RCTViewManager {
                 )
                 previousPictureInPictureAvailableValue = false
             }
+            print("RNPlayerViewManager")
+
+            // For IMA flow: set playerView as adContainerView and attach to view hierarchy
+//            if (view.playerView != nil) {
+//                print("RNPlayerViewManager setting views in player module")
+//                var responder = view.next
+//                view.reactViewController()
+//                print("RNPlayerViewManager first responder")
+//                print(responder)
+//                var viewController: UIViewController
+//                // Need this:
+////                playerModule?.setAdContainerView(newView: view.playerView!)
+////                playerModule?.setPlayerViewController(viewController: view.reactViewController())
+//            } else {
+//                print("RNPlayerViewManager NO PLAYERVIEW")
+//            }
+
             player.add(listener: view)
             view.playerView?.add(listener: view)
 

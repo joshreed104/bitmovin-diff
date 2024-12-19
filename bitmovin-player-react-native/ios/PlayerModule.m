@@ -126,5 +126,8 @@ RCT_EXTERN_METHOD(
     atPlaybackSpeed:(nonnull NSNumber *)atPlaybackSpeed
     resolver:(RCTPromiseResolveBlock)resolve
     rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(logViewId:(NSString *)viewId)
+RCT_EXTERN_METHOD(loadDaiStream:(NSString *)nativeId assetId:(NSString *)assetId backupURLString:(NSString *)backupURLString viewId:(nonnull NSNumber * )viewId)
+RCT_EXTERN_METHOD(setAdContainerView:(UIView *)adContainerView)
 
 @end
