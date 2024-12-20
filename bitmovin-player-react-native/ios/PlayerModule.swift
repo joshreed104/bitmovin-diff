@@ -86,7 +86,7 @@ public class PlayerModule: NSObject, RCTBridgeModule {
                let networkConfig = self?.setupNetworkConfig(nativeId: networkNativeId) {
                 playerConfig.networkConfig = networkConfig
             }
-            self?.adsWrapper.setPlayerModule(player: self!)
+            self?.adsWrapper.setPlayerModule(player: self)
             self?.adsWrapper.setupAdsLoader();
             self?.players[nativeId] = PlayerFactory.create(playerConfig: playerConfig)
         }
@@ -124,7 +124,7 @@ public class PlayerModule: NSObject, RCTBridgeModule {
                 playerConfig.networkConfig = networkConfig
             }
             let defaultMetadata = RCTConvert.analyticsDefaultMetadataFromAnalyticsConfig(analyticsConfigJson)
-            self?.adsWrapper.setPlayerModule(player: self!)
+            self?.adsWrapper.setPlayerModule(player: self)
             self?.adsWrapper.setupAdsLoader();
             self?.players[nativeId] = PlayerFactory.create(
                 playerConfig: playerConfig,
@@ -141,41 +141,19 @@ public class PlayerModule: NSObject, RCTBridgeModule {
     func loadDaiStream(_ nativeId: NativeId, assetId: String, backupURLString: String, viewId: NSNumber) {
         print("[Bitmovin IMA Flow]: Loading dai stream")
         bridge.uiManager.addUIBlock { [weak self] _, views in
-            print("viewId")
-            print(viewId)
-            print("views[viewId]")
-            print(views?[viewId])
-            print("controller")
-            print(views?[viewId]?.reactViewController())
             guard
-//                let currentPlayer = self,
-//                let currentAdContainerView = currentPlayer.adContainerView,
-//                let currentPlayerViewController = currentPlayer.playerViewController,
-//                let currentNativePlayer = currentPlayer.players[nativeId],
                 let currentPlayer = self,
                 let currentView = views?[viewId] as? RNPlayerView,
-                let currentAdContainerView = currentView.playerView,
                 let currentPlayerViewController = currentView.reactViewController(),
                 let currentNativePlayer = currentPlayer.players[nativeId]
             else {
-                print("loadDaiStream guard not met")
-                print("view")
-                print(views?[viewId])
-                print("playerView")
-                print((views?[viewId] as? RNPlayerView)?.playerView)
-                print("view controller")
-                print(views?[viewId]?.reactViewController())
                 return
             }
             currentPlayer.nativeViewId = viewId;
             currentPlayer.adsWrapper.setAssetKey(assetId: assetId);
             currentPlayer.adsWrapper.setBackupStreamURLString(backupStreamUrl: backupURLString);
-            currentPlayer.adsWrapper.setAdContainerView(adContainer: currentAdContainerView)
-            print("IMA DEBUG: PlayerModule adContainerView before calling request stream:")
-            print(currentPlayer.adsWrapper.adContainerView)
+            currentPlayer.adsWrapper.setAdContainerView(adContainer: currentView)
             currentPlayer.adsWrapper.setPlayerViewController(playerViewController: currentPlayerViewController)
-            print("IMA DEBUG: PlayerModule playerViewController before calling request stream:")
-            print(currentPlayer.adsWrapper.playerViewController)
             currentPlayer.adsWrapper.requestStream(nativePlayer: currentNativePlayer)
         }
     }
@@ -197,12 +175,6 @@ public class PlayerModule: NSObject, RCTBridgeModule {
         }
     }
     
-    @objc(logViewId:)
-    func logViewId(_ viewId: NSNumber) {
-        print(viewId)
-        playerViewController = bridge.uiManager.view(forReactTag: viewId).reactViewController()
-    }
-
     /**
      Loads the given offline source configuration into `nativeId`'s `Player` object.
      - Parameter nativeId: Target player.

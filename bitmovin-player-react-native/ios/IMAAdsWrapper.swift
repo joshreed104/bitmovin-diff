@@ -23,7 +23,7 @@ public class IMAAdsWrapper: NSObject, IMAStreamManagerDelegate, IMAAdsLoaderDele
     private var streamManager: IMAStreamManager?
     private var adBreakActive: Bool?
     
-    public func setPlayerModule(player: PlayerModule) {
+    public func setPlayerModule(player: PlayerModule?) {
         self.playerModule = player;
     }
     
@@ -74,14 +74,15 @@ public class IMAAdsWrapper: NSObject, IMAStreamManagerDelegate, IMAAdsLoaderDele
             let streamURL = URL(string: backupStreamURLString!)
             videoDisplay!.loadStream(streamURL!, withSubtitles: [])
         } else {
+            print("[Bitmovin IMA Flow]: Error loading backup stream")
             return;
         }
     }
     
     // adsLoader success
     public func adsLoader(_ loader: IMAAdsLoader, adsLoadedWith adsLoadedData: IMAAdsLoadedData) {
-        streamManager = adsLoadedData.streamManager!
-        streamManager!.delegate = self
+        streamManager = adsLoadedData.streamManager
+        streamManager?.delegate = self
         let adsRenderingSettings = IMAAdsRenderingSettings();
         adsRenderingSettings.uiElements = [NSNumber(value: IMAUiElementType.elements_COUNTDOWN.rawValue), NSNumber(value: IMAUiElementType.elements_AD_ATTRIBUTION.rawValue)]
         streamManager!.initialize(with: adsRenderingSettings)
